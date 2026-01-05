@@ -50,12 +50,13 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 ### 3️⃣ Configure environment variables
+```bash
 HOST=localhost
 PORT=3306
 USER=root
 PASSWORD=your_mysql_password
 DB=ml_project
-
+```
 ### 4️⃣ Train the model
 ```bash
 python train.py
@@ -67,8 +68,7 @@ model.joblib
 ```bash
 python -m uvicorn main:app --reload
 ```
-The API will be available at:
-http://127.0.0.1:8000/docs
+- The API will be available at: http://127.0.0.1:8000/docs
 
 ## 🧪 System Workflow
 
