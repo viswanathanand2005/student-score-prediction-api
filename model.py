@@ -1,6 +1,7 @@
 from sklearn.preprocessing import OrdinalEncoder
+import numpy as np
 
-class ModelWithPreprocessing:
+class RegressionModel:
     def __init__(self, model):
         self.model = model
         self.encoder = OrdinalEncoder(
@@ -8,13 +9,33 @@ class ModelWithPreprocessing:
             unknown_value=-1
         )
 
-    def fit(self, X, y):
+    def preprocess(self, X, fit=False):
         X = X.copy()
-        X[:, [0]] = self.encoder.fit_transform(X[:, [0]])
+        if fit:
+            X[:, [0]] = self.encoder.fit_transform(X[:, [0]])
+        else:
+            X[:, [0]] = self.encoder.transform(X[:, [0]])
+        return X
+
+    def fit_regressor(self, X, y):
+        X_enc = self.preprocess(X, fit=True)
+        self.model.fit(X_enc, y)
+        return self
+
+    def predict_regressor(self, X):
+        X_enc = self.preprocess(X, fit=False)
+        return self.model.predict(X)
+
+
+class ClassificationModel:
+    def __init__(self, model):
+        self.model = model
+
+    def fit_classifier(self, X, y):
+        X = X.copy()
         self.model.fit(X, y)
         return self
 
-    def predict(self, X):
+    def predict_classifier(self, X):
         X = X.copy()
-        X[:, [0]] = self.encoder.transform(X[:, [0]])
         return self.model.predict(X)

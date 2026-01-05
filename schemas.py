@@ -13,6 +13,7 @@ class PredictionInput(BaseModel):
 class PredictionOutput(BaseModel):
     student_id: int
     final_score: float
+    pass_status: bool
 
 class StudentOut(BaseModel):
     student_id: int

@@ -4,18 +4,23 @@ import numpy as np
 import joblib
 from typing import List
 
-from model import ModelWithPreprocessing  
+from model import RegressionModel,ClassificationModel
 from schemas import PredictionInput, PredictionOutput, StudentOut
 from db import get_db
 from tables import Student, Academic, Performance
 
 
-model = joblib.load("model.joblib")
+regressor = joblib.load("regressor.joblib")
+classifier = joblib.load("classifier.joblib")
 
 app = FastAPI(title="Student Final Score Predictor API")
 
-def create_input_arr(input):
-    return np.array([[
+
+
+@app.post("/predict", response_model=PredictionOutput)
+def predict(input: PredictionInput, db: Session = Depends(get_db)):
+
+    X_raw = np.array([[
         input.gender,
         input.attendance_percentage,
         input.study_hours_per_week,
@@ -23,11 +28,14 @@ def create_input_arr(input):
         input.previous_gpa
     ]], dtype=object)
 
-@app.post("/predict", response_model=PredictionOutput)
-def predict(input: PredictionInput, db: Session = Depends(get_db)):
+    X_encoded = regressor.preprocess(X_raw, fit=False)
+    X_encoded = X_encoded.astype(float)
 
-    X = create_input_arr(input)
-    final_score = float(model.predict(X)[0])
+    score_arr = regressor.model.predict(X_encoded).reshape(-1, 1)
+    final_score = float(score_arr[0])
+
+    X_classifier = np.hstack((X_encoded, score_arr))
+    pass_status = int(classifier.predict_classifier(X_classifier)[0])
 
     try:
         student = Student(
@@ -38,7 +46,6 @@ def predict(input: PredictionInput, db: Session = Depends(get_db)):
         )
         db.merge(student)
         db.flush()
-
 
         academic = Academic(
             student_id=input.student_id,
@@ -51,19 +58,23 @@ def predict(input: PredictionInput, db: Session = Depends(get_db)):
 
         performance = Performance(
             student_id=input.student_id,
-            final_score=final_score
+            final_score=final_score,
+            pass_status=pass_status
         )
         db.merge(performance)
 
         db.commit()
+
     except Exception:
         db.rollback()
         raise
 
     return {
         "student_id": input.student_id,
-        "final_score": final_score
+        "final_score": final_score,
+        "pass_status": pass_status
     }
+
 
 @app.get("/students", response_model=List[StudentOut])
 def student_details(db: Session = Depends(get_db)):
