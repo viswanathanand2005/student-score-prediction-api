@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import numpy as np
 import joblib
 from typing import List
+import uvicorn
 
 from model import RegressionModel,ClassificationModel
 from schemas import PredictionInput, PredictionOutput, StudentOut
@@ -79,3 +80,6 @@ def predict(input: PredictionInput, db: Session = Depends(get_db)):
 @app.get("/students", response_model=List[StudentOut])
 def student_details(db: Session = Depends(get_db)):
     return db.query(Student).all()
+
+if __name__ == "__main__":
+    uvicorn.run("main:app",host='0.0.0.0',port=4000,reload=True)
